@@ -1,0 +1,23 @@
+#학사공지
+DISCORD_WEBHOOK_URL_MATTERS
+https://discordapp.com/api/webhooks/1522931474209312819/cCAx4ESreumoE5EohG00_z2TAeXsITWh4KyFNvMOgYLETsKW_2P70091W-RdS0zcVZqn
+
+#대학공지사항
+DISCORD_WEBHOOK_URL_NOTICE
+https://discordapp.com/api/webhooks/1522931580912533615/Fw10PJcNuiH6oxpF3wEPIbYEwOB21Z4okCwjJKMH_V6dJ31h6SMpLnjlTVnsYSk6zxN_
+
+#생활관
+DISCORD_WEBHOOK_URL_HOUSING
+https://discordapp.com/api/webhooks/1522937814277427230/afCidCT3rTFzmNX9n3pgAI_e_RwoCCG0KqkFn_mr2HBNuIFc89_oCW8oQgCmf6Vbg14X
+
+$env:DISCORD_WEBHOOK_URL_NOTICE="https://discordapp.com/api/webhooks/1522931580912533615/Fw10PJcNuiH6oxpF3wEPIbYEwOB21Z4okCwjJKMH_V6dJ31h6SMpLnjlTVnsYSk6zxN_"
+$env:DISCORD_WEBHOOK_URL_MATTERS="https://discordapp.com/api/webhooks/1522931474209312819/cCAx4ESreumoE5EohG00_z2TAeXsITWh4KyFNvMOgYLETsKW_2P70091W-RdS0zcVZqn"
+$env:DISCORD_WEBHOOK_URL_HOUSING="https://discordapp.com/api/webhooks/1522937814277427230/afCidCT3rTFzmNX9n3pgAI_e_RwoCCG0KqkFn_mr2HBNuIFc89_oCW8oQgCmf6Vbg14X"
+python notice_checker.py
+
+
+
+github 업로드 할 때
+git add .
+git commit -m
+git push
