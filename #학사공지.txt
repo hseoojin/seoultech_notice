@@ -19,5 +19,5 @@ python notice_checker.py
 
 github 업로드 할 때
 git add .
-git commit -m
+git commit -m "설명"
 git push
