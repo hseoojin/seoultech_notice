@@ -19,6 +19,7 @@ from bs4 import BeautifulSoup
 # ----------------------------------------------------------------------
 # 설정: 확인할 게시판 목록
 # webhook_env : 이 게시판 알림을 보낼 디스코드 웹훅 URL이 들어있는 환경변수 이름
+# layout      : "table" = 표 형태 게시판, "list" = 카드/리스트 형태 게시판
 # ----------------------------------------------------------------------
 BOARDS = [
     {
@@ -26,12 +27,21 @@ BOARDS = [
         "url": "https://www.seoultech.ac.kr/service/info/notice?do=list",
         "base": "https://www.seoultech.ac.kr/service/info/notice",
         "webhook_env": "DISCORD_WEBHOOK_URL_NOTICE",
+        "layout": "table",
     },
     {
         "name": "학사공지",
         "url": "https://www.seoultech.ac.kr/service/info/matters?do=list",
         "base": "https://www.seoultech.ac.kr/service/info/matters",
         "webhook_env": "DISCORD_WEBHOOK_URL_MATTERS",
+        "layout": "table",
+    },
+    {
+        "name": "생활관 공지",
+        "url": "https://housing.seoultech.ac.kr/community/notice?boardFilter=58605",
+        "base": "https://housing.seoultech.ac.kr/community/notice",
+        "webhook_env": "DISCORD_WEBHOOK_URL_HOUSING",
+        "layout": "list",
     },
 ]
 
@@ -56,6 +66,18 @@ def save_seen(seen):
         json.dump(seen, f, ensure_ascii=False, indent=2)
 
 
+def _find_date_container(a_tag, max_levels=6):
+    """a 태그에서 위로 올라가며 '등록날짜'가 포함된 부모 블록을 찾음 (list 레이아웃용)"""
+    node = a_tag
+    for _ in range(max_levels):
+        if node.parent is None:
+            break
+        node = node.parent
+        if "등록날짜" in node.get_text(" ", strip=True):
+            return node
+    return a_tag.parent
+
+
 def fetch_notices(board):
     """게시판 목록 페이지에서 (bidx, 제목, 작성자, 날짜, 링크) 리스트를 뽑아냄"""
     resp = requests.get(board["url"], headers=HEADERS, timeout=15)
@@ -66,7 +88,9 @@ def fetch_notices(board):
     notices = []
     seen_bidx_on_page = set()
 
-    # 제목 링크는 전부 'do=commonview' 와 'bidx=' 를 포함함
+    layout = board.get("layout", "table")
+
+    # 제목 링크는 두 레이아웃 모두 'do=commonview' 와 'bidx=' 를 포함함
     for a in soup.find_all("a", href=True):
         href = a["href"]
         if "do=commonview" not in href or "bidx=" not in href:
@@ -83,22 +107,30 @@ def fetch_notices(board):
         title = a.get_text(strip=True)
         if not title:
             continue
+        # "No.1012 제목" 형태에서 앞의 번호 제거
+        title = re.sub(r"^No\.\d+\s*", "", title)
 
         seen_bidx_on_page.add(bidx)
-
-        # 작성자 / 날짜는 같은 <tr> 안의 다른 <td>에서 추출 시도
         author, date = "", ""
-        tr = a.find_parent("tr")
-        if tr:
-            tds = [td.get_text(strip=True) for td in tr.find_all("td")]
-            # 보통 [번호, 제목, 첨부, 작성자, 날짜, 조회수] 순서
-            # 날짜 형식(YYYY-MM-DD)을 찾아서 위치를 역산
-            date_candidates = [t for t in tds if re.match(r"^\d{4}-\d{2}-\d{2}$", t)]
-            if date_candidates:
-                date = date_candidates[0]
-                idx = tds.index(date)
-                if idx - 1 >= 0:
-                    author = tds[idx - 1]
+
+        if layout == "table":
+            # 표 형태: 같은 <tr> 안의 다른 <td>에서 작성자/날짜 추출
+            tr = a.find_parent("tr")
+            if tr:
+                tds = [td.get_text(strip=True) for td in tr.find_all("td")]
+                date_candidates = [t for t in tds if re.match(r"^\d{4}-\d{2}-\d{2}$", t)]
+                if date_candidates:
+                    date = date_candidates[0]
+                    idx = tds.index(date)
+                    if idx - 1 >= 0:
+                        author = tds[idx - 1]
+        else:
+            # 리스트/카드 형태: '등록날짜 : YYYY-MM-DD' 텍스트에서 날짜 추출
+            container = _find_date_container(a)
+            text = container.get_text(" ", strip=True)
+            date_match = re.search(r"등록날짜\s*[:：]\s*(\d{4}-\d{2}-\d{2})", text)
+            if date_match:
+                date = date_match.group(1)
 
         full_link = urljoin(board["base"], href)
 
