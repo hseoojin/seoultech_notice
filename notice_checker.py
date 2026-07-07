@@ -11,6 +11,7 @@ import json
 import os
 import re
 import sys
+import time
 from urllib.parse import urljoin
 
 import requests
@@ -148,9 +149,10 @@ def fetch_notices(board):
 
 
 def send_discord_message(webhook_url, board_name, notice):
+    """전송 성공하면 True, 실패하면 False 반환"""
     if not webhook_url:
         print(f"[경고] '{board_name}' 담당 웹훅 환경변수가 설정되어 있지 않습니다.")
-        return
+        return False
 
     lines = [f"**[{board_name}]** {notice['title']}"]
     meta = []
@@ -163,9 +165,32 @@ def send_discord_message(webhook_url, board_name, notice):
     lines.append(notice["link"])
 
     payload = {"content": "\n".join(lines)}
-    resp = requests.post(webhook_url, json=payload, timeout=10)
+    try:
+        resp = requests.post(webhook_url, json=payload, timeout=10)
+    except Exception as e:
+        print(f"[경고] 디스코드 전송 중 예외 발생: {e}")
+        return False
+
+    if resp.status_code == 429:
+        # 디스코드 rate limit: 안내된 시간만큼 대기 후 한 번 재시도
+        retry_after = 1.0
+        try:
+            retry_after = float(resp.json().get("retry_after", 1.0))
+        except Exception:
+            pass
+        print(f"[경고] 디스코드 rate limit, {retry_after:.1f}초 대기 후 재시도")
+        time.sleep(retry_after + 0.5)
+        try:
+            resp = requests.post(webhook_url, json=payload, timeout=10)
+        except Exception as e:
+            print(f"[경고] 재시도 중 예외 발생: {e}")
+            return False
+
     if resp.status_code >= 300:
         print(f"[경고] 디스코드 전송 실패 ({resp.status_code}): {resp.text}")
+        return False
+
+    return True
 
 
 def main():
@@ -190,9 +215,13 @@ def main():
 
         for notice in new_notices:
             print(f"[새 공지] ({name}) {notice['title']}")
-            send_discord_message(webhook_url, name, notice)
-            seen[name].append(notice["bidx"])
-            total_new += 1
+            success = send_discord_message(webhook_url, name, notice)
+            if success:
+                seen[name].append(notice["bidx"])
+                total_new += 1
+            else:
+                print(f"[보류] ({name}) {notice['title']} → 다음 실행 때 재시도됨")
+            time.sleep(1)  # 디스코드 rate limit 방지용 딜레이
 
         # 목록이 너무 커지지 않도록 최근 300개만 유지
         seen[name] = seen[name][-300:]
