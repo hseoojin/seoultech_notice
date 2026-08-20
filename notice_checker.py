@@ -48,7 +48,7 @@ BOARDS = [
         "name": "장학공지",
         "url": "https://www.seoultech.ac.kr/service/info/janghak?do=list",
         "base": "https://www.seoultech.ac.kr/service/info/janghak",
-        "webhook_env": "DISCORD_WEBHOOK_URL_SHCOLARSHIP",
+        "webhook_env": "DISCORD_WEBHOOK_URL_SCHOLARSHIP",
         "layout": "table",
     },
 ]
