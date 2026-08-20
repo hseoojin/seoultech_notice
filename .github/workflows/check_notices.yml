@@ -29,6 +29,7 @@ jobs:
           DISCORD_WEBHOOK_URL_NOTICE: ${{ secrets.DISCORD_WEBHOOK_URL_NOTICE }}
           DISCORD_WEBHOOK_URL_MATTERS: ${{ secrets.DISCORD_WEBHOOK_URL_MATTERS }}
           DISCORD_WEBHOOK_URL_HOUSING: ${{ secrets.DISCORD_WEBHOOK_URL_HOUSING }}
+          DISCORD_WEBHOOK_URL_SHCOLARSHIP: ${{ secrets.DISCORD_WEBHOOK_URL_SHCOLARSHIP }}
         run: python notice_checker.py
 
       - name: 확인 기록 커밋
