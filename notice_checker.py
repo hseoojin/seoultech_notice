@@ -2,7 +2,7 @@
 """
 서울과학기술대학교 공지사항 크롤러 + 디스코드 알림 봇
 
-- '대학공지사항', '학사공지(전체)' 두 게시판을 확인
+- '대학공지사항', '학사공지', '생활관 공지', '장학공지' 게시판을 확인
 - 이전 실행 때 못 본 새 글이 있으면 디스코드 웹훅으로 알림 전송
 - 이미 본 글 목록은 seen_notices.json 에 저장 (GitHub Actions가 자동 커밋)
 """
@@ -43,6 +43,13 @@ BOARDS = [
         "base": "https://housing.seoultech.ac.kr/community/notice",
         "webhook_env": "DISCORD_WEBHOOK_URL_HOUSING",
         "layout": "list",
+    },
+    {
+        "name": "장학공지",
+        "url": "https://www.seoultech.ac.kr/service/info/janghak?do=list",
+        "base": "https://www.seoultech.ac.kr/service/info/janghak",
+        "webhook_env": "DISCORD_WEBHOOK_URL_SHCOLARSHIP",
+        "layout": "table",
     },
 ]
 
